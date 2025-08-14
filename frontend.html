@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awesome Quiz Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #ffffff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid #e2e8f0; /* Light border */
+        }
+        h1 {
+            color: #1a202c; /* Dark text */
+            margin-bottom: 24px;
+        }
+        p {
+            color: #4a5568; /* Medium-dark text */
+            margin-bottom: 16px;
+        }
+        input[type="text"] {
+            padding: 12px 16px;
+            border: 2px solid #cbd5e0; /* Light gray border */
+            border-radius: 8px;
+            width: calc(100% - 32px); /* Full width minus padding */
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #2d3748;
+            outline: none;
+            transition: border-color 0.2s ease-in-out;
+        }
+        input[type="text"]:focus {
+            border-color: #3b82f6; /* Blue border on focus */
+        }
+        button {
+            background-color: #3b82f6; /* Blue button */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+        button:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .message {
+            margin-top: 20px;
+            font-weight: 600;
+            padding: 8px;
+            border-radius: 6px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .correct {
+            color: #10b981; /* Green for correct */
+            background-color: #ecfdf5; /* Light green background */
+        }
+        .incorrect {
+            color: #ef4444; /* Red for incorrect */
+            background-color: #fef2f2; /* Light red background */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden {
+            display: none;
+        }
+        .quiz-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .final-score {
+            margin-top: 30px;
+        }
+        .final-score p {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1d4ed8; /* Darker blue */
+        }
+        /* Styles for multiple choice option buttons */
+        .option-button {
+            background-color: #e2e8f0; /* Light gray */
+            color: #2d3748; /* Dark text */
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            text-align: left; /* Align text to left for options */
+        }
+        .option-button:hover:not(:disabled) {
+            background-color: #cbd5e0; /* Slightly darker gray on hover */
+            transform: translateY(-2px);
+        }
+        .option-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .option-button.correct-highlight {
+            background-color: #10b981; /* Green */
+            color: white;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+        .option-button.incorrect-highlight {
+            background-color: #ef4444; /* Red */
+            color: white;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+        .custom-alert {
+            animation: slideInFromTop 0.5s ease-out forwards;
+        }
+        @keyframes slideInFromTop {
+            from { transform: translateY(-50px) translateX(-50%); opacity: 0; }
+            to { transform: translateY(10px) translateX(-50%); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="welcome-section">
+            <h1 class="text-3xl font-bold mb-4">Hey there, welcome to this Quiz Game! 🎉</h1>
+            <p class="text-lg">Please enter your name to begin:</p>
+            <input type="text" id="name-input" placeholder="Your Name">
+            <button id="start-button">Start Quiz</button>
+        </div>
+
+        <div id="ready-section" class="hidden">
+            <h1 class="text-3xl font-bold mb-4">Hello, <span id="player-name-display"></span>!</h1>
+            <p class="text-lg mb-4">Are you ready to play?</p>
+            <div class="flex justify-center gap-4">
+                <button id="ready-yes-button" class="bg-green-500 hover:bg-green-600 shadow-md shadow-green-300">Yes</button>
+                <button id="ready-no-button" class="bg-red-500 hover:bg-red-600 shadow-md shadow-red-300">No</button>
+            </div>
+        </div>
+
+        <div id="quiz-section" class="hidden quiz-section">
+            <p id="question-number" class="text-xl font-semibold text-gray-700"></p>
+            <p id="question-text" class="text-2xl font-bold text-gray-800 mb-6"></p>
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Options will be dynamically inserted here -->
+            </div>
+            <div id="feedback-message" class="message hidden"></div>
+            <button id="next-question-button" class="mt-4 hidden bg-blue-500 hover:bg-blue-600 shadow-md shadow-blue-300">Next Question</button>
+        </div>
+
+        <div id="result-section" class="hidden final-score">
+            <h1 class="text-3xl font-bold mb-4">Quiz Finished! 🏆</h1>
+            <p class="text-2xl">You scored <span id="final-score-display"></span> out of <span id="total-questions-display"></span>!</p>
+            <p class="text-2xl">Your percentage: <span id="percentage-display"></span>%</p>
+            <button id="restart-button" class="mt-8 bg-purple-500 hover:bg-purple-600 shadow-md shadow-purple-300">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions and their correct answers
+        const questions = [
+            {
+                question: "What does CPU stand for?",
+                options: ["Central Power Unit", "Central Processing Unit", "Computer Personal Unit", "Core Processing Utility"],
+                correctOptionIndex: 1
+            },
+            {
+                question: "What does GPU stand for?",
+                options: ["General Processing Unit", "Graphical Performance Unit", "Graphics Processing Unit", "Gaming Power Unit"],
+                correctOptionIndex: 2
+            },
+            {
+                question: "What does RAM stand for?",
+                options: ["Read Access Memory", "Random Access Memory", "Run Anything Memory", "Rapid Application Memory"],
+                correctOptionIndex: 1
+            },
+            {
+                question: "What does ALU stand for?",
+                options: ["Analog Logic Unit", "Arithmetic Logic Unit", "Advanced Logical Unit", "Automatic Logic Upgrade"],
+                correctOptionIndex: 1
+            },
+            {
+                question: "What does DBMS stand for?",
+                options: ["Data Byte Management System", "Database Base Management System", "Database Management System", "Disk Backup Management System"],
+                correctOptionIndex: 2
+            },
+            {
+                question: "What does RDBMS stand for?",
+                options: ["Relational Database Management System", "Remote Data Backup Management System", "Realtime Database Management System", "Rapid Data Building Management System"],
+                correctOptionIndex: 0
+            },
+            {
+                question: "What does LLM stand for?",
+                options: ["Lightweight Learning Module", "Large Language Model", "Local Logic Machine", "Live Learning Machine"],
+                correctOptionIndex: 1
+            },
+            {
+                question: "What does API stand for?",
+                options: ["Application Program Interface", "Advanced Protocol Integration", "Application Programming Interface", "Automated Process Interaction"],
+                correctOptionIndex: 2
+            },
+            {
+                question: "What does ER stand for in DBMS?",
+                options: ["Element Recognition", "Entity Relationship", "Encrypted Record", "Event Response"],
+                correctOptionIndex: 1
+            },
+            {
+                question: "What does SQL stand for?",
+                options: ["Standard Query Language", "Structured Query Logic", "Sequential Query Language", "Structured Query Language"],
+                correctOptionIndex: 3
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let playerName = "";
+        let hasAnsweredCurrentQuestion = false; // Flag to prevent multiple scores for one question
+
+        // Get references to HTML elements
+        const welcomeSection = document.getElementById('welcome-section');
+        const readySection = document.getElementById('ready-section');
+        const quizSection = document.getElementById('quiz-section');
+        const resultSection = document.getElementById('result-section');
+
+        const nameInput = document.getElementById('name-input');
+        const startButton = document.getElementById('start-button');
+        const playerNameDisplay = document.getElementById('player-name-display');
+        const readyYesButton = document.getElementById('ready-yes-button');
+        const readyNoButton = document.getElementById('ready-no-button');
+
+        const questionNumberDisplay = document.getElementById('question-number');
+        const questionTextDisplay = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container'); // New element for options
+        const feedbackMessage = document.getElementById('feedback-message');
+        const nextQuestionButton = document.getElementById('next-question-button'); // Renamed/repurposed button
+
+        const finalScoreDisplay = document.getElementById('final-score-display');
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const percentageDisplay = document.getElementById('percentage-display');
+        const restartButton = document.getElementById('restart-button');
+
+        // --- Event Listeners ---
+
+        // Start button click
+        startButton.addEventListener('click', () => {
+            playerName = nameInput.value.trim();
+            if (playerName) {
+                welcomeSection.classList.add('hidden');
+                playerNameDisplay.textContent = playerName;
+                readySection.classList.remove('hidden');
+            } else {
+                alertUser("Please enter your name to start the quiz!");
+                nameInput.focus();
+            }
+        });
+
+        // "Are you ready? Yes" button click
+        readyYesButton.addEventListener('click', () => {
+            readySection.classList.add('hidden');
+            quizSection.classList.remove('hidden');
+            loadQuestion(); // Load the first question
+        });
+
+        // "Are you ready? No" button click
+        readyNoButton.addEventListener('click', () => {
+            alertUser("It's okay! Come back whenever you're ready to play. 👋");
+            readySection.classList.add('hidden');
+            welcomeSection.classList.remove('hidden');
+            nameInput.value = ""; // Clear name input
+        });
+
+        // Next Question button click
+        nextQuestionButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            loadQuestion();
+        });
+
+        // Restart button click
+        restartButton.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            playerName = "";
+            nameInput.value = "";
+            feedbackMessage.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            welcomeSection.classList.remove('hidden');
+            hasAnsweredCurrentQuestion = false; // Reset for a new game
+        });
+
+        // --- Functions ---
+
+        /**
+         * Loads the current question and its options into the display.
+         */
+        function loadQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                hasAnsweredCurrentQuestion = false; // Reset flag for new question
+                const q = questions[currentQuestionIndex];
+                questionNumberDisplay.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+                questionTextDisplay.textContent = q.question;
+                feedbackMessage.classList.add('hidden'); // Hide feedback from previous question
+                nextQuestionButton.classList.add('hidden'); // Hide next button until an option is selected
+
+                // Clear previous options
+                optionsContainer.innerHTML = '';
+
+                // Create new option buttons for the current question
+                q.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.className = 'option-button'; // Base class for styling
+                    button.dataset.index = index; // Store the option's index
+                    button.addEventListener('click', () => handleOptionClick(button, index));
+                    optionsContainer.appendChild(button);
+                });
+            } else {
+                showResults(); // No more questions, show results
+            }
+        }
+
+        /**
+         * Handles the user clicking on an option button.
+         * @param {HTMLElement} clickedButton - The button element that was clicked.
+         * @param {number} selectedIndex - The index of the selected option.
+         */
+        function handleOptionClick(clickedButton, selectedIndex) {
+            if (hasAnsweredCurrentQuestion) return; // Prevent re-answering the same question
+
+            hasAnsweredCurrentQuestion = true; // Mark question as answered
+
+            const q = questions[currentQuestionIndex];
+            const allOptionButtons = optionsContainer.querySelectorAll('.option-button');
+
+            // Disable all option buttons immediately after selection
+            allOptionButtons.forEach(button => {
+                button.disabled = true;
+            });
+
+            // Provide visual feedback for correct/incorrect choice
+            if (selectedIndex === q.correctOptionIndex) {
+                feedbackMessage.textContent = "Correct! ✅ Well done!";
+                feedbackMessage.className = 'message correct'; // Apply correct styling
+                clickedButton.classList.add('correct-highlight'); // Highlight selected correct option
+                score++;
+            } else {
+                feedbackMessage.textContent = `Incorrect. ❌ The correct answer was: "${q.options[q.correctOptionIndex]}".`;
+                feedbackMessage.className = 'message incorrect'; // Apply incorrect styling
+                clickedButton.classList.add('incorrect-highlight'); // Highlight selected incorrect option
+                // Also highlight the correct answer
+                allOptionButtons[q.correctOptionIndex].classList.add('correct-highlight');
+            }
+
+            feedbackMessage.classList.remove('hidden'); // Show feedback message
+            nextQuestionButton.classList.remove('hidden'); // Show the "Next Question" button
+        }
+
+        /**
+         * Displays the final score and percentage.
+         */
+        function showResults() {
+            quizSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            finalScoreDisplay.textContent = score;
+            totalQuestionsDisplay.textContent = questions.length;
+            const percentage = (score / questions.length) * 100;
+            percentageDisplay.textContent = percentage.toFixed(2); // Display with 2 decimal places
+        }
+
+        /**
+         * Custom alert function instead of window.alert()
+         * @param {string} message - The message to display.
+         */
+        function alertUser(message) {
+            const existingAlert = document.getElementById('custom-alert-message');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'custom-alert-message';
+            alertDiv.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 text-center text-lg custom-alert';
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+    </script>
+</body>
+</html>
